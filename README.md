@@ -3,10 +3,7 @@
 
 语法：
 
-$$ code \rightarrow block $$
-$$ block \rightarrow \{ stmts \} $$
-$$ stmts \rightarrow stmt \ stmts \ | \ \epsilon $$
-$$ stmt \rightarrow \textbf{id;} \ | \ \textbf{type id;} \ | \ block \ | \ \epsilon$$
+![](CodeCogsEqn.png)
 
 示例程序：
 ```cpp
