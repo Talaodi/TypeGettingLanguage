@@ -92,8 +92,6 @@ Token Lexer::lex() {
 }
 
 class Env {
-private:
-	using pair = std::pair<std::string, std::string>;
 public:
 	Env() = default;
 	std::string find(std::string);
@@ -103,7 +101,7 @@ private:
 };
 
 void Env::push(std::string type, std::string name) {
-	ids.insert(pair(name, type));
+	ids.insert(std::pair<std::string, std::string>(name, type));
 }
 
 std::string Env::find(std::string name) {
