@@ -133,17 +133,22 @@ private:
 	void block();
 	void stmts();
 	void stmt();
+	void error(std::string);
 };
 
-Token Parser::match(int kind, std::string error) {
+void Parser::error(std::string message) {
+	std::cerr << "SyntaxError: " << message << " on line " << lexer.line << ".\n";
+	exit(0);
+}
+
+Token Parser::match(int kind, std::string message) {
 	if (now.kind == kind) {
 		Token t = now;
 		now = lexer.lex();
 		return t;
 	}
 	else {
-		std::cerr << error << " on line " << lexer.line << ".\n";
-		exit(0);
+		error(message);
 	}
 }
 
@@ -187,8 +192,7 @@ void Parser::stmt() {
 		Token name = match(Tag::Id, "Expect a id after a type");
 		std::string find = stack.top().find(name.value);
 		if (find != "") {
-			std::cerr << "Id Was Defined\n";
-			exit(0);
+			error("Id was defined");
 		}
 		stack.top().push(type.value, name.value);
 		match(';', "Expect a ';'");
@@ -210,8 +214,7 @@ void Parser::stmt() {
 			}
 
 			if (find == "") {
-				std::cerr << "Id Not Found\n";
-				exit(0);
+				error("Id not found");
 			}
 		}
 
