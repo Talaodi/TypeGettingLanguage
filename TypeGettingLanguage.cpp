@@ -1,6 +1,5 @@
 ﻿#include <iostream>
 #include <string>
-#include <cstdlib>
 #include <map>
 #include <stack>
 
@@ -117,6 +116,13 @@ std::string Env::find(std::string name) {
 	}
 }
 
+/*
+code -> block
+block -> {stmts}
+stmts -> stmt stmts | empty
+stmt -> id; | type id; | block | empty
+*/
+
 class Parser {
 public:
 	Parser() = default;
@@ -187,7 +193,7 @@ void Parser::stmt() {
 	if (now.kind == '{') {
 		block();
 	}
-	else if (now.kind == Tag::Type) {
+	else if (now.kind == Tag::Type) { // type id;
 		Token type = match(Tag::Type, "");
 		Token name = match(Tag::Id, "Expect a id after a type");
 		std::string find = stack.top().find(name.value);
@@ -197,7 +203,7 @@ void Parser::stmt() {
 		stack.top().push(type.value, name.value);
 		match(';', "Expect a ';'");
 	}
-	else if (now.kind = Tag::Id) {
+	else if (now.kind = Tag::Id) { // id;
 		Token name = match(Tag::Id, "");
 		std::string find = stack.top().find(name.value);
 		if (find == "") {
@@ -212,7 +218,6 @@ void Parser::stmt() {
 				stack.push(temp.top());
 				temp.pop();
 			}
-
 			if (find == "") {
 				error("Id not found");
 			}
