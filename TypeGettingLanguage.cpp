@@ -14,11 +14,11 @@ public:
 	Token() : kind(0) {}
 	Token(int k) : kind(k) {}
 	Token(int k, std::string val) : kind(k), value(val) {}
-	int kind;
+	int kind; // char or 256(Type), 257(Id)
 	std::string value; // type or id.
 };
 
-std::ostream& operator<<(std::ostream&, Token);
+std::ostream& operator<<(std::ostream&, Token); // to use cout
 
 std::ostream& operator<<(std::ostream& out, Token token) {
 	if (token.value != "") {
@@ -34,16 +34,17 @@ std::ostream& operator<<(std::ostream& out, Token token) {
 class Lexer {
 public:
 	Lexer();
-	int line = 1;
-	Token lex();
+	int line = 1; // for error message
+	Token lex(); // get the next token
 private:
-	std::map<std::string, Token> words;
-	char lookahead = ' ';
-	void next();
-	void add(std::string);
+	std::map<std::string, Token> words; // keywords
+	char lookahead = ' '; // char it reads now
+	void next(); // get the next char
+	void add(std::string); // add new keywords
 };
 
 Lexer::Lexer() {
+	// keywords: int, bool, char
 	add("int");
 	add("bool");
 	add("char");
@@ -59,9 +60,11 @@ void Lexer::next() {
 
 Token Lexer::lex() {
 	if (lookahead == EOF) {
+		// finish reading
 		return Token(-1);
 	}
 	else {
+		// whitespace char
 		while (lookahead == ' ' || lookahead == '\n' || lookahead == '\t') {
 			next();
 			if (lookahead == '\n') {
@@ -69,14 +72,15 @@ Token Lexer::lex() {
 			}
 		}
 
+		// letter
 		if ('a' <= lookahead && 'z' >= lookahead) {
 			std::string value;
 			do {
 				value += lookahead;
 				next();
-			} while (('a' <= lookahead && 'z' >= lookahead) || ('0' <= lookahead && '9' >= lookahead));
+			} while (('a' <= lookahead && 'z' >= lookahead) || ('0' <= lookahead && '9' >= lookahead)); // letter or digit
 
-			auto find = words.find(value);
+			auto find = words.find(value); // if value is a keyword
 			if (find != words.end()) {
 				return find->second;
 			}
@@ -85,19 +89,21 @@ Token Lexer::lex() {
 			}
 		}
 
+		// others
 		Token result(lookahead);
 		lookahead = ' ';
 		return result;
 	}
 }
 
+// the symbol table
 class Env {
 public:
 	Env() = default;
-	std::string find(std::string);
-	void push(std::string, std::string);
+	std::string find(std::string); // name -> type
+	void push(std::string, std::string); // add (type, name)
 private:
-	std::map<std::string, std::string> ids;
+	std::map<std::string, std::string> ids; // the symbol table
 };
 
 void Env::push(std::string type, std::string name) {
@@ -110,11 +116,12 @@ std::string Env::find(std::string name) {
 		return found->second;
 	}
 	else {
-		return "";
+		return ""; // return empty string if name is not found
 	}
 }
 
 /*
+syntax:
 code -> block
 block -> {stmts}
 stmts -> stmt stmts | empty
@@ -124,32 +131,33 @@ stmt -> id; | type id; | block | empty
 class Parser {
 public:
 	Parser() = default;
-	Lexer lexer;
-	void code();
-	void print_result();
+	Lexer lexer; // to get tokens
+	void code(); // entrance
+	void print_result(); // print result
 private:
-	std::string result;
-	std::stack<Env> stack;
+	std::string result; // output
+	std::stack<Env> stack; // the symbol table
 	int tabs = 0;
-	Token now = lexer.lex();
-	Token match(int, std::string);
-	void print_tabs();
+	Token now = lexer.lex(); // token it reads now
+	Token match(int, std::string); // match a token, or throw an error
+	void print_tabs(); // style
+	// look at syntax
 	void block();
 	void stmts();
-	void stmt();
-	void error(std::string);
+	void stmt(); 
+	void error(std::string); // throw an error
 };
 
 void Parser::error(std::string message) {
 	std::cerr << "SyntaxError: " << message << " on line " << lexer.line << ".\n";
-	exit(0);
+	exit(0); // exit
 }
 
 Token Parser::match(int kind, std::string message) {
-	if (now.kind == kind) {
+	if (now.kind == kind) { // match
 		Token t = now;
 		now = lexer.lex();
-		return t;
+		return t; // return the token it matches
 	}
 	else {
 		error(message);
@@ -157,16 +165,19 @@ Token Parser::match(int kind, std::string message) {
 }
 
 void Parser::print_tabs() {
+	// add tabs * '\t'
 	for (int i = 1; i <= tabs; i++) {
 		result += '\t';
 	}
 }
 
 void Parser::code() {
+	// code -> block
 	block();
 }
 
 void Parser::block() {
+	// block -> {stmts}
 	match('{', "Expect a '{'");
 	print_tabs();
 	result += "{\n";
@@ -182,27 +193,38 @@ void Parser::block() {
 
 void Parser::stmts() {
 	if (now.kind == '{' || now.kind == Tag::Type || now.kind == Tag::Id) {
+		// stmts -> stmt stmts
 		stmt();
 		stmts();
 	}
+	// empty
 }
 
 void Parser::stmt() {
 	if (now.kind == '{') {
+		// stmt -> block
 		block();
 	}
-	else if (now.kind == Tag::Type) { // type id;
+	else if (now.kind == Tag::Type) { 
+		// stmt -> type id;
+		// match
 		Token type = match(Tag::Type, "");
 		Token name = match(Tag::Id, "Expect a id after a type");
+		match(';', "Expect a ';'");
+
 		std::string find = stack.top().find(name.value);
 		if (find != "") {
+			// id was defined
 			error("Id was defined");
 		}
+		// new id
 		stack.top().push(type.value, name.value);
-		match(';', "Expect a ';'");
 	}
-	else if (now.kind = Tag::Id) { // id;
+	else if (now.kind = Tag::Id) { 
+		// stmt -> id;
+		// match
 		Token name = match(Tag::Id, "");
+		match(';', "Expect a ';'");
 		std::string find = stack.top().find(name.value);
 		if (find == "") {
 			std::stack<Env> temp;
@@ -217,14 +239,15 @@ void Parser::stmt() {
 				temp.pop();
 			}
 			if (find == "") {
+				// can not found id
 				error("Id not found");
 			}
 		}
 
 		print_tabs();
 		result += name.value + ": " + find + ";\n";
-		match(';', "Expect a ';'");
 	}
+	// stmt -> empty
 }
 
 void Parser::print_result() {
