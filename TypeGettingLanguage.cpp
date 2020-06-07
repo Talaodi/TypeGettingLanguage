@@ -1,5 +1,6 @@
 ﻿#include <iostream>
 #include <string>
+#include <cstdio>
 #include <map>
 #include <stack>
 
@@ -254,7 +255,9 @@ void Parser::print_result() {
 	std::cout << result;
 }
 
-int main() {
+int main(int argc, char** argv) {
+	freopen(argv[1], "r", stdin);
+	
 	Parser parser;
 	parser.code();
 	parser.print_result();
