@@ -1,10 +1,6 @@
 # TypeGettingLanguage
 《编译原理》小练习
 
-语法：
-
-![](CodeCogsEqn.png)
-
 示例程序：
 ```cpp
 {
